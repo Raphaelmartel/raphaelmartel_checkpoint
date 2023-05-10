@@ -1,9 +1,29 @@
-import Cupcake from "@components/Cupcake";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import Cupcake from "../components/Cupcake";
 
 export default function CupcakeList() {
-  // Step 1: get all cupcakes
+  const [cupcakeList, setCupcakeList] = useState([]);
+  const [accessorieList, setAccesorieList] = useState([]);
+  const [selectedAccessory, setSelectedAccessory] = useState("");
+  const filter = useRef();
 
-  // Step 3: get all accessories
+  const callApi = (url, setter) => {
+    axios
+      .get(`${import.meta.env.VITE_API_URL}${url}`)
+      .then((res) => setter(res.data))
+      .catch((err) => console.error(err));
+  };
+
+  useEffect(() => {
+    callApi("cupcakes", setCupcakeList);
+    callApi("accessories", setAccesorieList);
+  }, []);
+
+  const handleChange = () => {
+    setSelectedAccessory(filter.current.value);
+  };
 
   return (
     <>
@@ -11,18 +31,32 @@ export default function CupcakeList() {
       <form className="center">
         <label htmlFor="cupcake-select">
           Filter by{" "}
-          <select id="cupcake-select">
+          <select onChange={handleChange} ref={filter} id="cupcake-select">
             <option value="">---</option>
-            {/* Step 4: add an option for each accessory */}
+            {accessorieList.map((accessorie) => (
+              <option key={accessorie.id} value={accessorie.id}>
+                {accessorie.name}
+              </option>
+            ))}
           </select>
         </label>
       </form>
       <ul className="cupcake-list" id="cupcake-list">
-        {/* Step 2: repeat this block for each cupcake */}
-        <li className="cupcake-item">
-          <Cupcake />
-        </li>
-        {/* end of block */}
+        {cupcakeList &&
+          cupcakeList
+            .filter(
+              (cupcake) =>
+                !selectedAccessory || cupcake.accessory_id === selectedAccessory
+            )
+            .map((cupcake) => {
+              return (
+                <li className="cupcake-item" key={cupcake.id}>
+                  <Link to={`/cupcakes/${cupcake.name}`}>
+                    <Cupcake className="cupcake" cupcake={cupcake} />
+                  </Link>
+                </li>
+              );
+            })}
       </ul>
     </>
   );
